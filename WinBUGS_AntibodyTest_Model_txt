@@ -1,0 +1,99 @@
+
+############# WinBUGS model specification###
+model{
+	#specifying likelihood using the "ones trick" - p204 in the BUGS book
+	const <- 10000 #arbitrary, ensure phi[i] < 1
+	z <- 1
+	z ~ dbern(phi)
+	phi <- L / const	
+	#prob - probability being infected
+	#sens - sensitivity of the test (true positive rate)
+	#spec - specificity of the test = 1 - false positive rate (fpr)	
+	#Npos - number of observed postive case
+	#Ntest - number of tested people
+	#likelihood function L
+	L <- pow(prob*sens + (1-prob)*fpr, Npos)*pow(prob*(1-sens) + (1-prob)*(1-fpr), Ntest - Npos)
+	
+	#prior probability 
+	prob ~ dbeta(1, 1) #flat prior 
+	spec ~ dbeta( 612.681, 4.319) #parameter determined by method of moments
+	fpr <- 1 - spec
+	sens ~ dbeta(592.32, 24.68) #parameter determined by method of moments
+}
+
+#how were the prior parameters for spec and sens determined?
+In the CDC publication (Havers FP, Reed C, Lim T, et al. Seroprevalence of Antibodies to SARS-CoV-2 in 10 Sites in the United States, March 23-May 12, 2020. JAMA Intern Med. Published online July 21, 2020. doi:10.1001/jamainternmed.2020.4130), they used an antibody test with specificity 99.3% with 95%CI (98.32 - 99.88%) and sensitivity 96.0% with 95% CI (89.98 - 98.89%), based on a sample size of 618 (519 negative and 99 positive – see https://www.biorxiv.org/content/10.1101/2020.04.24.057323v2)
+If the estimated specificity 99.3%, then its binomial variance should be p*(1-p)/n = 99.3%*(1-99.3%)/618 = 4.295718; if the estimated sensitivity 96.0%, then its binomial variance should be p*(1-p)/n = 96.0%*(1-96.0%)/618 = 23.7312. Then, we use the following method of moments to estimate the parameters (a and b) for the beta distribution 
+a <- E_theta*((E_theta*(1-E_theta)/var_theta) - 1)
+b<-(1-E_theta)*((E_theta*(1-E_theta)/var_theta) - 1)
+For specificity of 99.3% (1 - false positive rate), its beta parameters are dbeta(612.681, 4.319)
+For sensitivity of 96.0% (true positive rate), its beta parameters are dbeta(592.32, 24.68)
+
+####### WinBUGS parameters #####################################
+4 chains, beg=10,000, thin=4, updates=100,000
+
+############################ Data #############################
+************************************
+Western Washington State 
+Male 
+list(Npos = 27, Ntest=1334)
+Female 
+list(Npos = 31, Ntest=1930)
+************************************
+New York City metro area 
+Male 
+list(Npos = 65, Ntest=1149)
+Female
+list(Npos = 73, Ntest=1333)
+
+************************************
+Louisiana 
+Male 
+list(Npos = 36, Ntest=507)
+Female 
+list(Npos = 45, Ntest=677)
+************************************
+South Florida
+Male
+list(Npos = 22, Ntest=778)
+Female
+list(Npos = 20, Ntest=964)
+******************************
+Philadelphia metra area
+Male
+list(Npos = 14, Ntest=402)
+Female
+list(Npos = 8, Ntest=422)
+*************************************
+Missouri
+Male
+list(Npos = 32, Ntest=864)
+Female
+list(Npos = 25, Ntest=1018)
+************************************
+Utah
+Male
+list(Npos = 13, Ntest=465)
+Female
+list(Npos = 16, Ntest=673)
+************************************
+San Francisco Bay area 
+Male
+list(Npos = 11, Ntest=571)
+Female
+list(Npos = 4, Ntest=653)
+************************************
+Connecticut 
+Male 
+list(Npos = 43, Ntest=702)
+Female
+list(Npos = 28, Ntest=729)
+************************************
+Minneapolis St Paul St Cloud metro area
+Male 
+list(Npos = 6, Ntest=406)
+Female
+list(Npos = 12, Ntest=454)
+***********************************
+
+
